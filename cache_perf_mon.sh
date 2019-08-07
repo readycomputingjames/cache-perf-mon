@@ -4,18 +4,18 @@
 # System Support Engineer
 # Ready Computing
 #
-# Script for Cache Performance Monitoring
+# Main Bash script for Cache Performance Monitoring
 #
 # This script assumes that the user running the script has OS
 # Auth enabled into Cache instance(s) and is %All role
 #
 # Our system OS use-case will be RHEL 7+ (or CentOS 7+)
 #
-# Usage = cache_perf_mon.sh
 # Usage = cache_perf_mon.sh <command>
 #
-# Ex: ./cache_perf_mon.sh
-# Ex: ./cache_perf_mon.sh --help
+# Ex: ./cache_perf_mon.sh --cache-info"
+# Ex: ./cache_perf_mon.sh --show-app-errors USER"
+# Ex: ./cache_perf_mon.sh --show-log"
 #
 # (See Help Function for Full Usage Notes)
 #
@@ -29,6 +29,49 @@ VERSION="1.00"
 
 INPUT_COMMAND1=$1
 INPUT_COMMAND2=$2
+INPUT_COMMAND3=$3
+
+cache_info()
+{
+
+   # Display Info About Cache
+
+   # Load Instances into an Array, in case we have Multiple
+   instances=()
+   while IFS= read -r line; do
+      instances+=( "$line" )
+   done < <( /usr/bin/ccontrol list |grep Configuration |awk '{ print $2 }' |tr -d "'" )
+
+   for i in ${instances[@]};
+   do
+      echo ""
+      echo "------------------------------"
+      echo "Cache Info for $i:"
+      echo ""
+      echo -e "w ##class(%SYSTEM.Version).GetVersion()\nh" |/usr/bin/csession $i -U %SYS |awk NR==5
+      echo ""
+
+      ### ISC Product: Cache = 1, Ensemble = 2, HealthShare = 3
+      product=`echo -e "w ##class(%SYSTEM.Version).GetISCProduct()\nh" |/usr/bin/csession $i -U %SYS |awk NR==5`
+      case $product in
+         1)
+            echo "Installed ISC Product = Cache"
+            ;;
+         2)
+            echo "Installed ISC Product = Ensemble"
+         ;;
+         3)
+            echo "Installed ISC Product = HealthShare"
+         ;;
+         *)
+            echo "Unable to Fetch Installed ISC Product Number"
+      esac
+
+      echo ""
+
+   done
+
+}
 
 help_text()
 {
@@ -39,19 +82,20 @@ help_text()
    echo "----------------------"
    echo ""
    echo "Usage:"
-   echo "cache_perf_mon.sh"
-   echo "cache_perf_mon.sh <command>"
+   echo "cache_perf_mon.sh <command(s)>, ..."
    echo ""
    echo "Commands:"
+   echo "--cache-info = Display version and ISC product information for Cache"
    echo "--help = Show help notes for this script"
-   echo "--license = Show license usage and info"
-   echo "--show-log = Show log warnings and errors"
+   echo "--show-app-errors <namespace> = List application errors for a namespace"
+   echo "--show-log = Show console log warnings and errors"
    echo "--status = Show status of all instances on this machine"
    echo "--version = Print out script version"
    echo ""
    echo "Examples:"
-   echo "./cache_perf_mon.sh"
-   echo "./cache_perf_mon.sh --status"
+   echo "./cache_perf_mon.sh --cache-info"
+   echo "./cache_perf_mon.sh --show-app-errors USER"
+   echo "./cache_perf_mon.sh --show-log"
    echo ""
 
 }
@@ -96,25 +140,57 @@ is_up()
 
 }
 
-license_usage()
+show_app_errors()
 {
 
-   # Load Instances into an Array, in case we have Multiple
-   instances=()
-   while IFS= read -r line; do
-      instances+=( "$line" )
-   done < <( /usr/bin/ccontrol list |grep Configuration |awk '{ print $2 }' |tr -d "'" )
+   # Show Application Errors for a Namespace
 
-   for i in ${instances[@]};
-   do
-      echo ""
-      echo "------------------------------"
-      echo "License Usage for $i:"
-      echo ""
-      /usr/bin/csession $i "##class(%SYSTEM.License).ShowSummary()"
-      echo ""
-      echo ""
-   done
+   echo ""
+   echo "Fetching Application Errors for Namespace"
+   echo ""
+   echo "(If you did not provide a namespace, it will be list from default User Namespace)"
+   echo ""
+
+   if [ -z "$INPUT_COMMAND2" ]
+   then
+      echo "Fetching App Error Log for Default User Namespace"
+
+      # Load Instances into an Array, in case we have Multiple
+      instances=()
+      while IFS= read -r line; do
+         instances+=( "$line" )
+      done < <( /usr/bin/ccontrol list |grep Configuration |awk '{ print $2 }' |tr -d "'" )
+
+      for i in ${instances[@]};
+      do
+         echo ""
+         echo "------------------------------"
+         echo "Listing Default App Error Log for $i:"
+         echo ""
+         /usr/bin/csession $i "^%ERN"
+         echo ""
+      done
+
+   else
+      echo "Fetching App Error Log for Namespace $INPUT_COMMAND2"
+
+      # Load Instances into an Array, in case we have Multiple
+      instances=()
+      while IFS= read -r line; do
+         instances+=( "$line" )
+      done < <( /usr/bin/ccontrol list |grep Configuration |awk '{ print $2 }' |tr -d "'" )
+
+      for i in ${instances[@]};
+      do
+         echo ""
+         echo "------------------------------"
+         echo "Listing App Error in $i for Namespace $INPUT_COMMAND2:"
+         echo ""
+         /usr/bin/csession $i -U $INPUT_COMMAND2 "^%ERN"
+         echo ""
+      done
+
+   fi
 
 }
 
@@ -161,11 +237,14 @@ main ()
 
       # Parse out CLI Argument to see what we Need to do
       case $INPUT_COMMAND1 in
+         --cache-info)
+            cache_info
+            ;;
          --help)
             help_text
          ;;
-         --license)
-            license_usage
+         --show-app-errors)
+            show_app_errors
          ;;
          --show-log)
             show_log
