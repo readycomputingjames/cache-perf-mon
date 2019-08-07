@@ -13,7 +13,7 @@
 #
 # Usage = cache_perf_mon.sh <command>
 #
-# Ex: ./cache_perf_mon.sh --cache-info"
+# Ex: ./cache_perf_mon.sh --glostat"
 # Ex: ./cache_perf_mon.sh --show-app-errors USER"
 # Ex: ./cache_perf_mon.sh --show-log"
 #
@@ -70,6 +70,16 @@ cache_info()
       echo ""
 
    done
+
+}
+
+glostat()
+{
+
+   # Gathering ^GLOSTAT Data over the Course of 60 Seconds
+   echo "placeholder"
+   
+   #echo -e "d ^GLOSTAT\nNo\n60\nq\nh" |csession VAHSRM001 -U %SYS
 
 }
 
