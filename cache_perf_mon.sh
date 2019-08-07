@@ -96,6 +96,7 @@ help_text()
    echo ""
    echo "Commands:"
    echo "--cache-info = Display version and ISC product information for Cache"
+   echo "--glostat = Display ^GLOSTAT data over the next 60 seconds"
    echo "--help = Show help notes for this script"
    echo "--show-app-errors <namespace> = List application errors for a namespace"
    echo "--show-log = Show console log warnings and errors"
@@ -249,7 +250,10 @@ main ()
       case $INPUT_COMMAND1 in
          --cache-info)
             cache_info
-            ;;
+         ;;
+         --glostat)
+            glostat
+         ;;
          --help)
             help_text
          ;;
