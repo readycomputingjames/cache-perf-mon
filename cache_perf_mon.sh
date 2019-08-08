@@ -13,9 +13,9 @@
 #
 # Usage = cache_perf_mon.sh <command>
 #
-# Ex: ./cache_perf_mon.sh --glostat"
-# Ex: ./cache_perf_mon.sh --show-app-errors USER"
-# Ex: ./cache_perf_mon.sh --show-log"
+# Ex: ./cache_perf_mon.sh --glostat
+# Ex: ./cache_perf_mon.sh --show-app-errors USER
+# Ex: ./cache_perf_mon.sh --show-log
 #
 # (See Help Function for Full Usage Notes)
 #
